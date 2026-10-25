@@ -1,0 +1,49 @@
+name: 自动更新并部署
+
+# 每 6 小时（UTC）：00 / 06 / 12 / 18 = 北京 08:00 / 14:00 / 20:00 / 次日 02:00
+# 也可以在 Actions 页面手动点 Run workflow
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+env:
+  TZ: UTC
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 看一眼仓库里都有什么
+        run: ls -1A
+
+      - name: 准备 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 安装依赖
+        run: pnpm install --no-frozen-lockfile
+
+      - name: 抓取 B 站投稿（失败不阻断）
+        continue-on-error: true
+        run: python3 scripts/fetch_bili.py
+
+      - name: 构建
+        run: pnpm run build
+
+      - name: 部署到 Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CF_PROJECT_NAME || 'orbitalnoise' }} --branch=main
