@@ -1,0 +1,81 @@
+# React Premium Template
+
+## Usage
+
+```bash
+# 1. Copy template to new project
+cp -r /home/ubuntu/.claude/templates/react-premium/ /path/to/new-project/
+
+# 2. cd into project and install
+cd /path/to/new-project
+npm install
+
+# 3. Customize for your project:
+#    - package.json: name
+#    - index.html: title, description, favicon
+#    - tailwind.config.js: colors, fonts
+#    - src/index.css: CSS variables, fonts, accent classes
+#    - src/App.tsx: actual content
+```
+
+## Included UI Components (src/components/ui/)
+
+- **TextGenerateEffect** — Character-by-character text reveal animation
+- **Particles** — Canvas-based floating particle system with glow
+- **SpotlightCard** — Mouse-tracking radial gradient spotlight on hover
+- **MovingBorder** — Animated glowing border that orbits the card
+
+## Responsive Skeleton (src/components/layout/Section.tsx)
+
+**强制使用。禁止自己写固定宽度容器或硬写 px 字号。**
+
+### 组件
+- **`<Section>`** — 响应式 section 容器，自带 `clamp()` padding + 内部 1200px 最大宽度
+- **`<Grid minItemWidth={280}>`** — 自适应网格，手机单列 / PC 多列自动铺
+
+### 字号工具类（禁止用 text-5xl md:text-7xl 这种硬档位）
+| 类名 | 尺寸 | 用途 |
+|------|------|------|
+| `fs-hero` | clamp(36→72px) | Hero 主标题 |
+| `fs-display` | clamp(30→56px) | section 大标题 |
+| `fs-heading` | clamp(24→40px) | h2 |
+| `fs-subheading` | clamp(20→28px) | h3 |
+| `fs-stat` | clamp(24→40px) | 统计数字（大数字如 ¥38,562,347 必用此类） |
+| `fs-body` | clamp(15→17px) | 正文 |
+| `fs-small` | clamp(13→14px) | 小字 |
+
+### 用法示例
+```tsx
+import { Section, Grid } from './components/layout/Section';
+
+<Section className="bg-zinc-900">
+  <h2 className="fs-display font-bold mb-8">聚合通道，无忧收款</h2>
+  <Grid minItemWidth={280}>
+    <div className="glass-card p-6">
+      <div className="fs-stat font-bold brand-text">¥38,562,347</div>
+      <div className="fs-small">日均交易额</div>
+    </div>
+    {/* ... */}
+  </Grid>
+</Section>
+```
+
+## 部署前硬门槛（铁律）
+
+部署完成后必须跑手机端审计：
+```bash
+python3 ~/.claude/tools/mobile-audit.py https://项目名.zaka.1442.com
+```
+退出码 1 = 不通过 = 禁止交付，必须返工。详见全局规则《手机端响应式硬门槛》。
+
+## Must Customize Per Project
+
+1. **Colors** in tailwind.config.js — unique palette per project
+2. **Fonts** — choose distinctive Google Fonts, never Arial/Inter/Roboto
+3. **CSS variables** in index.css — match tailwind colors
+4. **Content** — replace App.tsx with actual sections
+
+## Locked Dependencies
+
+- tailwindcss: ^3.4 (NOT v4)
+- framer-motion: in dependencies (NOT devDependencies)

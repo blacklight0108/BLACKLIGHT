@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Bodoni+Moda:ital,wght@1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Aladdin Sane 色板：米白纸 / 砖红 / 孔雀蓝 / 墨黑 */
+  --paper: #f7f3e9;
+  --paper-2: #efe8d8;
+  --ink: #14100c;
+  --ink-soft: #40372d;
+  --ink-mute: #7a6d5c;
+  --ink-faint: #a79984;
+  --red: #d8381f;
+  --red-deep: #b02a14;
+  --teal: #14657a;
+
+  --line: rgba(20, 16, 12, 0.14);
+  --line-strong: rgba(20, 16, 12, 0.32);
+  --transition: 0.25s ease;
+
+  --fs-hero: clamp(2.5rem, 9.2vw, 6rem);
+  --fs-display: clamp(1.9rem, 4.6vw, 2.9rem);
+  --fs-heading: clamp(1.3rem, 2.6vw, 1.7rem);
+  --fs-subheading: clamp(1rem, 1.8vw, 1.18rem);
+  --fs-body: clamp(0.95rem, 1.3vw, 1.02rem);
+  --fs-small: clamp(0.8rem, 1vw, 0.86rem);
+  --fs-micro: clamp(0.68rem, 0.86vw, 0.74rem);
+
+  --section-py: clamp(3rem, 7vw, 5.5rem);
+  --section-px: clamp(1rem, 4.5vw, 2.75rem);
+  --container-max: 1180px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; background: var(--paper); }
+
+body {
+  font-family: 'Space Grotesk', 'Noto Sans SC', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-weight: 700; line-height: 1.15; }
+
+::selection { background: var(--red); color: var(--paper); }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--paper-2); }
+::-webkit-scrollbar-thumb { background: var(--ink); }
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+
+@layer components {
+  .display {
+    font-family: 'Anton', 'Noto Sans SC', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 0.94;
+  }
+
+  .serif {
+    font-family: 'Bodoni Moda', Georgia, serif;
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  .label {
+    font-size: var(--fs-micro);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .container-fluid {
+    width: min(100%, var(--container-max));
+    margin-inline: auto;
+    min-width: 0;
+  }
+
+  .section-wrap {
+    padding-block: var(--section-py);
+    padding-inline: var(--section-px);
+  }
+
+  .section-anchor { scroll-margin-top: 68px; }
+
+  /* 空板块（还没有内容）收窄上下留白，避免大片空白 */
+  .section-tight { padding-block: clamp(1.75rem, 3.5vw, 2.75rem); }
+
+  .grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: clamp(1rem, 2.2vw, 1.6rem);
+  }
+
+  .fs-hero { font-size: var(--fs-hero); }
+  .fs-display { font-size: var(--fs-display); }
+  .fs-heading { font-size: var(--fs-heading); }
+  .fs-subheading { font-size: var(--fs-subheading); }
+  .fs-body { font-size: var(--fs-body); }
+  .fs-small { font-size: var(--fs-small); }
+  .fs-micro { font-size: var(--fs-micro); }
+
+  .hair { height: 1px; width: 100%; background: var(--line); }
+
+  .rule { height: 2px; width: 100%; background: var(--ink); }
+
+  .panel {
+    position: relative;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    min-width: 0;
+    transition: border-color var(--transition), background var(--transition);
+  }
+  .panel:hover { border-color: var(--ink); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1rem;
+    font-size: var(--fs-small);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-solid { background: var(--red); border-color: var(--red); color: var(--paper); }
+  .btn-solid:hover { background: var(--red-deep); border-color: var(--red-deep); color: var(--paper); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .slot-empty {
+    background: var(--paper-2);
+    border: 1px dashed var(--line-strong);
+  }
+
+  .field {
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    padding: 0.5rem 0.7rem;
+    font: inherit;
+    font-size: var(--fs-small);
+    color: var(--ink);
+    outline: none;
+  }
+  .field:focus { border-color: var(--ink); }
+}

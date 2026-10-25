@@ -1,0 +1,309 @@
+════════════════════════════════════════════════════════════
+⚠️ 换了新仓库 = Secrets 和 Variables 全是空的（先看这段）
+════════════════════════════════════════════════════════════
+
+GitHub 的 Secrets 和 Variables 是「一个仓库一份」，不会跟着账号走，也不会
+从旧仓库自动继承。只要你新建了一个仓库（比如 Blacklight0108/pages.dev），
+就必须在这个新仓库里把三样东西重新填一遍：
+
+  Settings → Secrets and variables → Actions
+
+  【Secrets 页签】
+    CLOUDFLARE_API_TOKEN    = Cloudflare 生成的令牌
+    CLOUDFLARE_ACCOUNT_ID   = Cloudflare 的账户 ID
+
+  【Variables 页签】
+    CF_PROJECT_NAME         = Cloudflare Pages 里那个项目名（一字不差）
+
+漏了任何一个，任务一跑到「部署到 Cloudflare Pages」就会红。
+
+────────────────────────────────────────────────────────────
+怎么确认自己填对了
+────────────────────────────────────────────────────────────
+1. Secrets 页签里能看到 CLOUDFLARE_API_TOKEN 和 CLOUDFLARE_ACCOUNT_ID 两行，
+   后面显示 Updated 的时间（值本身看不到，这是正常的）
+2. Variables 页签里能看到 CF_PROJECT_NAME
+3. Cloudflare 后台 Workers & Pages 里，那个项目的名字和 CF_PROJECT_NAME 完全一致
+   （大小写、短横线都要一样）
+
+────────────────────────────────────────────────────────────
+工作流文件叫什么名字
+────────────────────────────────────────────────────────────
+本工程用的是 .github/workflows/main.yml。
+GitHub 只认这个路径，名字可以叫 main.yml，也可以叫别的，
+但必须放在 .github/workflows/ 下面，且在工作流列表里只留一个，
+两个同名工作流会同时跑，互相抢着部署。
+
+BLACKLIGHT · GitHub 自动更新部署与更改说明
+========================================================
+最后更新：2026-10-25（UTC）
+定时策略：每 6 小时跑一次，全流程时间统一使用 UTC
+适用：用「BLACKLIGHT-源码与自动更新.zip」部署到 GitHub + Cloudflare Pages
+
+
+一、这套东西到底在干什么
+------------------------------------------------
+GitHub 那边有一个自动任务（工作流），每 6 小时醒一次，做六件事：
+
+  1  拿出你仓库里的代码
+  2  装依赖（pnpm install）
+  3  跑抓取脚本，把 19 个 UP 主的最新投稿更新到 public/data/updates.json
+  4  构建网站（pnpm run build → 生成 dist 文件夹）
+  5  把 dist 推到你 Cloudflare Pages 的项目上（网站立刻更新）
+  6  把这次抓到的数据提交回仓库（留个快照，方便回看）
+
+所以你什么都不用做，网站上的 UP 主投稿会自己变新。
+前提只有一个：下面的 Secrets 和 Variable 要配对，对一次就永久生效。
+
+
+二、仓库里都有什么（传错了会跑不起来）
+------------------------------------------------
+  .github/workflows/main.yml   自动任务本体 ← 最关键，路径不能变
+  src/                                       网站源码（五个板块组件都在）
+  public/content.json                        你的内容：专辑、文章、图片、UP 主名单
+  public/data/updates.json                   抓取结果（自动生成，别手改）
+  public/avatars/                            19 张 UP 主头像
+  public/uploads/                            放你自己的图片（现在是空的）
+  public/_headers                            缓存与安全响应头
+  public/robots.txt                          搜索引擎规则
+  scripts/fetch_bili.py                      抓取脚本（只用 Python 标准库）
+  package.json / pnpm-lock.yaml              依赖清单与锁定版本 ← 两个都必须有
+  docs/                                      这三份说明文件
+  index.html / vite.config.ts / tailwind.config.js 等   构建配置
+
+⚠️ .github 这个文件夹开头有个点，Mac 和 Windows 默认把它藏起来。
+   上传前先在文件管理器里打开「显示隐藏文件」：
+   Windows：资源管理器 → 查看 → 勾选「隐藏的项目」
+   Mac：在 Finder 里按 Cmd + Shift + .
+   不上传它 = GitHub 认为你没有任何工作流 = Actions 页面只有一个新手引导页。
+
+
+三、第一次配置（按顺序做，一步都别跳）
+------------------------------------------------
+【3.1】建仓库
+  1. 打开 https://github.com/new
+  2. Repository name 填 orbitalnoise（名字随意，但记住它）
+  3. 选 Private（私有，别人看不到你的代码）
+  4. 不要勾 Add a README（勾了反而多一步冲突）
+  5. 点 Create repository
+  6. 下一个页面点「uploading an existing file」
+  7. 把解压出来的全部文件和文件夹拖进去（含 .github 和 docs）
+     ⚠️ 拖的是文件夹里的内容，不要套一层文件夹
+  8. 下面填一句说明，例如 init，点 Commit changes
+  9. 回到仓库首页，确认能看到 .github、src、public、package.json、pnpm-lock.yaml
+
+【3.2】拿 Cloudflare 的两个值
+  Account ID：
+    1. 打开 https://dash.cloudflare.com
+    2. 右上角点头像 → Account（或者直接看地址栏 dash.cloudflare.com/<这一串32位>）
+    3. 也可以进 Workers 和 Pages 页面，右侧信息栏里有一行 Account ID
+  API Token：
+    1. 右上角头像 → My Profile → API Tokens → Create Token
+    2. 选最下面的 Create Custom Token
+    3. Token name 填 github-pages-deploy
+    4. Permissions 三格分别选：Account / Cloudflare Pages / Edit
+    5. Account Resources 选 Include → 你的账号
+    6. Continue to summary → Create Token → 把那串字符复制走
+       ⚠️ 只显示一次，关掉页面就再也看不到，先粘到记事本
+
+【3.3】填进 GitHub
+  1. 仓库 → Settings → 左边 Secrets and variables → Actions
+  2. 上面有两个标签：Secrets（加密）和 Variables（明文变量），别弄混
+  3. 在 Secrets 标签点 New repository secret，建两条：
+       Name: CLOUDFLARE_API_TOKEN     Secret: 刚才那串 Token
+       Name: CLOUDFLARE_ACCOUNT_ID    Secret: 你的 Account ID
+     名字必须一字不差，大小写、下划线都要一样
+  4. 切到 Variables 标签，点 New repository variable，建一条：
+       Name: CF_PROJECT_NAME          Value: orbitalnoise（你 Cloudflare 里的项目名）
+     这个不是必须的，不填会默认用 orbitalnoise；但你项目名不叫这个就必须填。
+
+【3.4】跑一次，验证全通
+  1. 仓库 → Actions 标签
+  2. 左边点「自动更新并部署」
+  3. 右边点 Run workflow → 绿色按钮 Run workflow
+  4. 等 2 到 4 分钟，刷新页面，出现绿色勾 = 全通
+  5. 点进这次运行，能看到 Summary 里一张表：19 个频道的 UID、条数、最新一条标题
+  6. 打开你的网站，雷达板块右上角的时间应该变成刚才那次运行的 UTC 时间
+
+  第一次跑如果红了，直接看第七节的报错对照表。
+
+
+四、定时规则与 UTC（这次重点统一的部分）
+------------------------------------------------
+GitHub 的 cron **只认 UTC**，写北京时间会晚 8 小时，所以整套流程统一按 UTC 走。
+
+现在的设置是每 6 小时一次，写在 .github/workflows/main.yml 里：
+
+  on:
+    schedule:
+      - cron: "0 */6 * * *"
+
+对应关系：
+
+  ┌──────────── UTC 实际运行 ────────────┬────────── 北京时间（UTC+8）──────────┐
+  │ 00:00                                │ 08:00                                │
+  │ 06:00                                │ 14:00                                │
+  │ 12:00                                │ 20:00                                │
+  │ 18:00                                │ 次日 02:00                           │
+  └──────────────────────────────────────┴──────────────────────────────────────┘
+
+为什么这么排：白天两次（08:00、14:00）覆盖上午和午间的投稿高峰，
+晚上 20:00 覆盖当天下班后，凌晨 02:00 兜一次夜间更新。一天四次，不多不少。
+
+全流程每个阶段的时间戳都是 UTC，一处不混：
+  1. 触发时间     cron 0 */6 * * *（UTC）
+  2. 运行环境     env: TZ: UTC，日志里的时间就是 UTC
+  3. 运行标记     第一步把 RUN_AT=date -u 写进环境，后面步骤统一引用
+  4. 数据时间     抓取脚本写 updatedAt: 2026-10-25T12:15:35Z，并附 timezone: UTC
+  5. 页面显示     雷达板块显示「同步 2026-10-25 12:15 UTC」，投稿日期按 UTC 换算
+  6. 提交信息     chore: 更新 UP 主投稿 2026-10-25T12:15:35Z [skip ci]
+
+⚠️ GitHub 的定时任务不是精确闹钟：整点高峰期可能排队几分钟到十几分钟，
+   偶尔还会跳过某一次（官方行为）。想立刻更新，就手动 Run workflow（见第六条）。
+
+
+五、想改频率 / 改时间怎么写
+------------------------------------------------
+把 cron 那行改成你要的（依然是 UTC）：
+
+  每 6 小时（当前）      "0 */6 * * *"
+  每 4 小时              "0 */4 * * *"
+  每 3 小时              "0 */3 * * *"
+  每 2 小时              "0 */2 * * *"
+  每小时                 "0 * * * *"
+  每天 UTC 04:00         "0 4 * * *"        （北京时间 12:00）
+  每天 UTC 01:00         "0 1 * * *"        （北京时间 09:00）
+  工作日每 6 小时        "0 */6 * * 1-5"    （周一至周五）
+
+cron 五个位置分别是：分 时 日 月 星期。
+
+改法（网页上就能改，不用装任何东西）：
+  1. 仓库里点开 .github/workflows/main.yml
+  2. 右上角铅笔图标（Edit this file）
+  3. 改 cron 那一行
+  4. 拉到下面 Commit changes
+  5. 提交完自动触发不保证，去 Actions 手动 Run workflow 跑一次验证
+
+⚠️ 频率别低于每小时，B 站接口会被限流；每天最少一次就够用。
+
+
+六、手动跑一次 / 看结果
+------------------------------------------------
+手动跑：
+  Actions → 左边「自动更新并部署」→ 右边 Run workflow → Run workflow
+  绿色勾 = 成功；红叉 = 某一步失败，点进去看哪一步红（第七节有对照）
+
+看这次干了什么：
+  点进那次运行，左边的步骤列表就是六步：记录时间 → 准备 pnpm → 准备 Node →
+  装依赖 → 准备 Python → 抓取 → 构建 → 校验构建产物 → 部署 → 存档快照 → 结果汇总
+  · 「抓取 UP 主最新投稿」这步是灰色的（continue-on-error），意思是某个频道挂了不影响整体
+  · Summary 页有一张表：每个频道的 UID、条数、最新一条标题
+
+想看 Cloudflare 那边有没有收到：
+  Cloudflare → Workers 和 Pages → 你的项目 → Deployments
+  这里会多出一条新的部署记录，时间对得上就是成功了，来源会显示是 API 部署。
+
+
+七、报错对照表（按红的那一步查）
+------------------------------------------------
+现象：Actions 里根本没有「自动更新并部署」这个名字
+  原因：.github/workflows/ 路径不对，或者文件没上传成功，或者不在 main 分支
+  处理：确认仓库根目录下有 .github/workflows/main.yml，
+        点开它能看到内容；分支必须是 main（Settings → Branches 可确认）
+
+现象：装依赖这一步红，报 ERR_PNPM_OUTDATED_LOCKFILE / lockfile 不匹配
+  原因：package.json 和 pnpm-lock.yaml 版本对不上（常见于只改了 package.json）
+  处理：本地不要乱改 dependencies；确需改的话，把 pnpm-lock.yaml 一起更新后重新上传
+
+现象：部署那一步红，报 Could not find project / project not found
+  原因：CF_PROJECT_NAME 和 Cloudflare 里的项目名不一致
+  处理：把 Variable 改成 Cloudflare 里真实的名字（大小写、连字符都要一致）
+
+现象：部署那一步红，报 Authentication error / 10000 / Invalid API Token
+  原因：Token 填错、被删、权限不够（缺 Cloudflare Pages / Edit）
+  处理：重新建一个 Token，权限 Account → Cloudflare Pages → Edit，覆盖 Secret 里那条
+
+现象：部署那一步红，报 Account ID 无效
+  原因：Account ID 复制少了字符，或者拿的是另一个账号的
+  处理：重新复制 32 位那串，覆盖 CLOUDFLARE_ACCOUNT_ID
+
+现象：抓取那步黄/灰，但部署绿的
+  原因：B 站接口临时抽风，脚本已自动换备用接口并重试一次
+  处理：不用管。数据会沿用上一次抓到的，下次运行会补上。
+        连续多次全都抓不到，再去看脚本日志里是不是 code=-352 / 412（机房 IP 被限流）
+
+现象：构建那步红，报 Node 版本 / vite 需要更高版本
+  原因：工作流里 node-version 被改低了
+  处理：保持 node-version: "22"（Vite 8 需要 Node 20.19+ 或 22.12+）
+
+现象：网页能开但没样式、白屏
+  原因：构建产物不对，或者 Cloudflare 项目里混了旧文件
+  处理：看运行日志最后有没有 assets/index-xxxx.js 和 index-xxxx.css；
+        有的话去 Cloudflare Deployments 看最新那条是不是这次的
+
+现象：一切绿但网站没变化
+  原因：① 浏览器缓存（Ctrl+F5 强刷）② 你手动在 Cloudflare 拖过旧包，覆盖了自动部署
+  处理：先强刷；再确认 Cloudflare Deployments 最新一条的来源是不是 API
+
+
+八、几个必须知道的限制
+------------------------------------------------
+1. 定时任务会在仓库连续 60 天没有任何提交后自动暂停（GitHub 的规则，为了省资源）。
+   我们的工作流每次抓到新投稿会自动提交一次，所以正常情况不会触发。
+   万一网站两周没更新过（比如所有 UP 主都停更了），去 Actions 里手动 Run workflow 一次就恢复。
+2. GitHub Actions 免费额度：私有仓库每月 2000 分钟。
+   我们一次运行约 1 到 2 分钟，一天 4 次 ≈ 每月 120 到 240 分钟，用不到额度的十分之一。
+   公开仓库是无限免费的，但你内容不方便公开，私有仓库这个额度足够。
+3. 仓库里 public/data/updates.json 会随抓取自动提交（每次一条 commit，标了 [skip ci] 不触发额外构建）。
+   一个月大概 120 条提交，不影响使用，介意可以忽略。
+4. 这个工作流只负责「抓 ＋ 构建 ＋ 部署」，不改 Cloudflare 的项目设置（域名、缓存规则都在 Cloudflare 那边管）。
+
+
+九、以后要改东西，改哪里
+------------------------------------------------
+只改内容（加专辑 / 文章 / 图片 / 换 UP 主）
+  → 改 public/content.json，提交（Commit changes）即可。
+  → 具体格式看《03-网站内容与日常维护.txt》。
+  → 提交后去 Actions 手动 Run workflow 一次，网站立刻更新，不用等 6 小时。
+
+改外观（颜色 / 字体 / 板块 / 游戏）
+  → 改 src/ 下的文件，提交后同样手动跑一次。
+  → 样式总开关在 src/index.css（颜色变量都在文件开头，改一处全站生效）。
+
+加一个 UP 主
+  → 在 public/content.json 的 ups 数组里加一条 { mid, name, note, url, avatar }
+  → mid 必须和 B 站空间页地址里的数字一致，抓取脚本靠它认人
+  → 头像图放 public/avatars/，文件名建议用 mid.jpg，avatar 写 "/avatars/mid.jpg"
+  → 提交后跑一次，Summary 里的频道数会从 19 变成 20
+
+改 Cloudflare 项目名
+  → 必须同时改 GitHub 的 Variable CF_PROJECT_NAME，否则报找不到项目
+
+换 Cloudflare 账号
+  → 两个 Secret 全部重填（Account ID 和 Token 都变了）
+
+
+十、安全提醒（照做就行）
+------------------------------------------------
+1. API Token 只放 GitHub 的 Secret 里，不要写进代码、不要发到聊天里、不要放仓库文件。
+2. Token 权限只给 Cloudflare Pages / Edit，别给 Account 全权。
+3. Cloudflare 和 GitHub 两个账号都开两步验证。
+4. 仓库保持 Private。私有仓库的 Actions 日志只有你能看，里面有你的项目名也没关系，
+   但不要在里面打印 Token。
+5. 怀疑 Token 泄露了：Cloudflare → My Profile → API Tokens → 找到那条 → Delete，
+   然后重新建一条，覆盖 GitHub 里的 Secret，再跑一次验证。
+
+
+附：本版本相对上一版改了什么
+------------------------------------------------
+1. 定时从每 2 小时改成每 6 小时（UTC 00/06/12/18），一共四次，覆盖白天主要更新时段。
+2. 全流程时间统一 UTC：运行环境 TZ=UTC、RUN_AT 用 date -u、
+   抓取脚本写 Z 结尾的时间戳、页面显示「同步 … UTC」、提交信息带 UTC 时间。
+3. 新增「校验构建产物」一步：index.html / content.json / data/updates.json 缺一个就提前失败，
+   不会把半成品部署上线。
+4. 新增运行结果汇总：每次跑完在 Summary 里列出 19 个频道的条数和最新标题，一眼看出谁没抓到。
+5. 抓取脚本加整轮重试：主接口和备用接口都失败时，隔 3 秒再整体试一次。
+6. Node 固定 22（配合 Vite 8），package.json 补 engines 说明，避免环境不一致。
+7. 提交快照前先 git pull --rebase，减少并发时的推送失败。
+8. 部署前设置 timeout-minutes: 20，卡住不会白占额度。
+9. 新增 public/_headers（缓存 + 安全头）与 robots.txt。

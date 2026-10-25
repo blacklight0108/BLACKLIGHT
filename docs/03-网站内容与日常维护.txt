@@ -1,0 +1,254 @@
+BLACKLIGHT · 网站内容与日常维护说明
+========================================================
+最后更新：2026-10-25（UTC）
+适用：日常加专辑、加文章、加图片、换 UP 主、改完怎么上线
+
+
+一、先记住一句话
+------------------------------------------------
+网站的「内容」和「样子」是分开的：
+
+  内容（专辑、文章、图片、UP 主名单） → 全在 content.json 一个文件里，改它就行
+  样子（颜色、字体、板块顺序、游戏）  → 在源码 src/ 里，一般不用动
+
+所以你以后 90% 的操作，就是打开 content.json 改几行，再传一次。
+
+
+二、content.json 在哪、怎么打开
+------------------------------------------------
+位置：
+  · 在网页包（BLACKLIGHT-网页文件.zip 解压后）里，和 index.html 并排
+  · 在源码包里是 public/content.json
+
+怎么打开：
+  Windows：右键 → 打开方式 → 记事本
+  Mac：右键 → 打开方式 → 文本编辑
+  实在没有编辑器，用 https://jsonlint.com 在线改也行（改完 Validate 一下）
+
+规矩（不遵守整份就白改）：
+  1. 引号必须是英文的 " "，中文的 “ ” 不算
+  2. 逗号必须是英文的 , ，中文的 ，不算
+  3. 最后一个 item 后面不能多一个逗号
+  4. 大括号小括号要成对
+  5. 改完先粘到 jsonlint.com 点 Validate，绿了再去部署
+
+安全做法：改之前另存一份 content.json 副本，改坏了直接把副本换回来。
+
+
+三、整个文件长什么样（骨架）
+------------------------------------------------
+{
+  "site": { ... },        站点名字、介绍
+  "albums": [ ... ],      01 专辑板块
+  "articles": [ ... ],    03 文章板块
+  "images": [ ... ],      04 图片板块
+  "ups": [ ... ]          02 雷达板块（B 站频道）
+}
+
+现在 albums / articles / images 都是空的 []，所以主页上只有标题没有内容。
+空着不显示任何占位字——这是故意的，不是坏了。
+
+
+四、01 专辑板块怎么加
+------------------------------------------------
+在 "albums": [ ] 里照这样写，多条之间用英文逗号隔开：
+
+  "albums": [
+    {
+      "id": "01",
+      "title": "The Rise and Fall of Ziggy Stardust",
+      "artist": "David Bowie",
+      "year": "1972",
+      "cover": "/uploads/ziggy.jpg",
+      "note": ""
+    },
+    {
+      "id": "02",
+      "title": "Low",
+      "artist": "David Bowie",
+      "year": "1977",
+      "cover": "/uploads/low.jpg",
+      "note": ""
+    }
+  ]
+
+字段说明：
+  id      序号，随便填，只要不重复
+  title   专辑名（必填，不填这一格就不显示）
+  artist  歌手
+  year    年份
+  cover   封面图路径，写 /uploads/文件名.jpg；留空则显示一个唱片图形，也算正常
+  note    备注，一般留空
+
+条数不设上限：写 3 条显示 3 格，写 20 条显示 20 格。
+
+
+五、03 文章板块怎么加
+------------------------------------------------
+  "articles": [
+    {
+      "id": "01",
+      "title": "文章标题",
+      "date": "2026.10.25",
+      "excerpt": "列表里显示在标题下面的一两句话",
+      "url": ""
+    }
+  ]
+
+字段说明：
+  title    标题（必填）
+  date     显示的日期，随便什么格式，建议 2026.10.25
+  excerpt  摘要，一两句话
+  url      点标题跳去哪：
+             留空 = 只是个标题，点了不跳
+             外部链接 = "https://mp.weixin.qq.com/s/xxxx"
+             站内页面 = "/about.html"（需要你自己放一个 about.html 进去）
+
+篇数不设上限。
+
+
+六、04 图片板块怎么加
+------------------------------------------------
+两步：
+  1) 把图片放进 uploads 文件夹（没有就新建一个，名字必须叫 uploads）
+  2) content.json 里写：
+
+  "images": [
+    {
+      "id": "01",
+      "src": "/uploads/photo1.jpg",
+      "title": "照片标题",
+      "desc": "一句说明",
+      "tag": "PHOTO"
+    }
+  ]
+
+字段说明：
+  src   图片路径（必填，填了才显示）
+  title 标题
+  desc  一句说明
+  tag   右上角小标签，随便写，比如 PHOTO / LIVE / 2026
+
+图片规矩：
+  · 文件名用英文 + 下划线，别用中文、别用空格（用中文在部分手机上会 404）
+  · 单张压到 200KB 以内，手机打开才不心疼流量
+  · 竖图横图都行，页面会自动裁成统一比例
+
+
+七、02 雷达板块：加 / 换 / 删 UP 主
+------------------------------------------------
+每个 UP 主对应一条：
+
+  {
+    "mid": "546195",
+    "name": "显示的名字",
+    "note": "B 站频道 · 粉丝 12.3 万",
+    "url": "https://space.bilibili.com/546195",
+    "avatar": "/avatars/546195.jpg"
+  }
+
+关键点：
+  · mid 是最重要的。打开 UP 主空间页，地址栏 space.bilibili.com/ 后面那串数字就是它。
+    抓取脚本靠 mid 认人，写错了就抓不到这个人的投稿。
+  · name 是站上显示的名字，和 B 站真实昵称不一致也没关系。
+  · note 是那行灰色小字，随便写。
+  · avatar 头像文件放 avatars 文件夹，建议文件名直接用 mid.jpg；
+    留空则显示名字首字。
+  · 首页默认显示前 6 个，剩下的点「展开全部 · 19」看。
+    想改默认显示数量，去 src/components/Radar.tsx 里把 ups.slice(0, 6) 的 6 改掉。
+
+加完以后：
+  · 走 GitHub：提交后手动 Run workflow 一次 → Summary 里会多一行，条数正常就成
+  · 走 Cloudflare 拖拽：页面会显示新频道，但「最新投稿」要等下次抓到才有（手动拖拽不跑抓取）
+
+
+八、改完怎么上线（两条路，选一条）
+------------------------------------------------
+【路 1】GitHub 自动（推荐，配好后最省事）
+  1. 在 GitHub 网页上打开要改的文件 → 右上角铅笔 → 改 → Commit changes
+  2. 去 Actions → 自动更新并部署 → Run workflow
+  3. 等 2 分钟，网站自动更新，不用碰 Cloudflare
+
+【路 2】Cloudflare 拖拽（不走 GitHub 时用）
+  1. 把改好的 content.json 和图片放回网页包那套文件里
+  2. Cloudflare → 你的项目 → Deployments → Create new deployment → Upload assets
+  3. 全选整套文件拖进去 → Deploy
+  4. 打开网站 Ctrl+F5 强刷
+  ⚠️ 拖拽是整站替换，要传整套文件；而且它不会跑抓取，投稿数据保持你包里的那份。
+
+注意：最后部署的那一次决定线上是哪一版。手动拖了个旧包，就会盖掉自动部署的成果。
+
+
+九、时间为什么都显示 UTC
+------------------------------------------------
+这一版把全站时间统一成了 UTC（世界标准时间），原因是：
+  · GitHub 的定时任务是 UTC
+  · 抓取脚本写出的时间也是 UTC
+  · 页面显示 UTC 才能和任务运行时间对得上，不会出现「明明 14 点抓的，页面显示 6 点」
+
+于是：
+  · 雷达右上角：同步 2026-10-25 12:15 UTC（这就是抓取那一刻的 UTC 时间）
+  · 每条投稿前面的 10.24 这种日期，也是按 UTC 算的
+  · UTC 比北京时间晚 8 小时：页面显示 12:15 UTC = 北京时间 20:15
+
+如果你更想看北京时间，改两处就行（不影响其他功能）：
+  1. src/lib/data.ts 里 formatSyncTime 把 getUTCxxx 换成 getxxx，并把后缀 UTC 改成「北京时间」
+  2. 同一个文件里 formatDate 的 getUTCMonth/getUTCDate 换成 getMonth/getDate
+  改完重新构建上传。不过这样各设备时区不同显示会不一样，不建议折腾。
+
+
+十、本地想先看看效果（可选，不做也能改）
+------------------------------------------------
+最省事的办法：改完直接传到 Cloudflare，看线上的。
+反正 Deployments 里有历史记录，改坏了一键 Rollback，不会把站搞没。
+
+想本地预览（需要装 Node.js，一次就好）：
+  1. 装 Node 22：https://nodejs.org 下载 LTS 版本，一路下一步
+  2. 装 pnpm：打开终端/命令提示符，运行  npm i -g pnpm
+  3. 进到源码文件夹，运行  pnpm install
+  4. 运行  pnpm run dev  → 浏览器打开它给的 http://localhost:5173
+  5. 改代码会自动刷新；改 content.json 也会热更新
+  6. 最后运行  pnpm run build  → 生成 dist 文件夹，那就是要上传的那套文件
+     （内容就在 dist 里，包含 content.json、data/、avatars/、_headers）
+
+
+十一、文件都是干什么的（想知道再翻）
+------------------------------------------------
+  index.html            页面外壳，标题、图标、分享预览信息在这
+  assets/index-xxx.js   整站逻辑（打包后，别手改）
+  assets/index-xxx.css  全部样式（打包后，别手改）
+  content.json          你的内容 ← 日常就改这个
+  data/updates.json     抓取结果，脚本自动写，别手改
+  avatars/              UP 主头像
+  uploads/              你自己的图片
+  _headers              缓存与安全响应头（Cloudflare 自动读）
+  robots.txt            搜索引擎规则
+  favicon.ico/png       浏览器标签页图标
+  apple-touch-icon.png  加到手机桌面时的图标
+  blacklight-mark.png   首页右上角那个闪电标
+
+
+十二、改坏了怎么办
+------------------------------------------------
+1. 线上坏了：Cloudflare → Deployments → 找到上一次正常的那条 → 右边的「…」→ Rollback
+   30 秒回到上一版。
+2. content.json 改坏了：Jsonlint 会告诉你第几行错；实在找不出来，
+   把整份换成 [] 的空骨架先恢复，再一条一条加回来。
+   空骨架：
+   { "site": { "name": "BLACKLIGHT", "nameEn": "BLACKLIGHT", "tagline": "", "intro": "",
+     "about": [], "meta": [], "links": [] }, "albums": [], "articles": [], "images": [], "ups": [] }
+3. 图片不显示：先确认文件名大小写完全一致（Linux 服务器区分大小写，photo.JPG 和 photo.jpg 是两个文件）。
+
+
+十三、日常维护清单（照着看一眼就行）
+------------------------------------------------
+每周
+  [ ] 打开网站，看雷达时间是不是近期的
+  [ ] 手机打开一次，确认没有横向滚动、字没被切
+每月
+  [ ] GitHub → Settings → Actions，看额度用量（私有仓库每月 2000 分钟，我们只用一百多）
+  [ ] Cloudflare → 确认没有异常部署失败记录
+  [ ] 备份一次：把当前 content.json 和 uploads 文件夹存到电脑另一个地方
+半年
+  [ ] 检查 GitHub 的 API Token 是否还有效（Cloudflare → My Profile → API Tokens 看 Last used）
+  [ ] 想换域名就那时一起弄：Cloudflare → Custom domains → Set up a custom domain
