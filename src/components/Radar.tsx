@@ -10,16 +10,36 @@ interface Props {
   updates: UpdatesData
 }
 
+function publicationTime(value?: string | number): number {
+  if (value === undefined || value === null || value === '') return 0
+  const numeric = Number(value)
+  const time = Number.isFinite(numeric)
+    ? (numeric > 0 ? numeric * 1000 : 0)
+    : Date.parse(String(value))
+  return Number.isFinite(time) && time > 0 ? time : 0
+}
+
 /** 雷达：固定在追的频道 + 各自最新几条投稿 */
 export function Radar({ ups, updates }: Props) {
   const feeds = updates.feeds || {}
   const synced = formatSyncTime(updates.updatedAt)
   const [expanded, setExpanded] = useState(false)
-  const shown = expanded ? ups : ups.slice(0, 6)
+  const sortedUps = ups
+    .map((up, index) => ({
+      up,
+      index,
+      latest: (feeds[up.mid] ?? []).reduce(
+        (latest, item) => Math.max(latest, publicationTime(item.pubdate)),
+        0,
+      ),
+    }))
+    .sort((a, b) => b.latest - a.latest || a.index - b.index)
+    .map(({ up }) => up)
+  const shown = expanded ? sortedUps : sortedUps.slice(0, 6)
 
   return (
     <Section id="radar" className="section-anchor border-t border-ink/20">
-      <SectionHead no="02" title="雷达" en="RADAR" note={synced ? `同步 ${synced}` : undefined} />
+      <SectionHead no="02" title="雷达" en="RADAR" note={synced ? `最近投稿优先 · 同步 ${synced}` : '最近投稿优先'} />
 
       {ups.length > 0 && (
         <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))' }}>
