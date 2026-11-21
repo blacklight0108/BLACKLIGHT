@@ -1,5 +1,6 @@
 import { Section } from './layout/Section'
 import { SectionHead } from './SectionHead'
+import { MusicShelf } from './MusicShelf'
 import type { AlbumItem } from '../lib/types'
 
 interface Props {
@@ -11,8 +12,9 @@ export function Albums({ albums }: Props) {
   const list = albums.filter((a) => a.title || a.cover)
 
   return (
-    <Section id="albums" className={`section-anchor border-t border-ink/20${list.length === 0 ? ' section-tight' : ''}`}>
+    <Section id="albums" className="section-anchor border-t border-ink/20">
       <SectionHead no="01" title="专辑" en="ALBUMS" />
+      <MusicShelf />
 
       {list.length > 0 && (
         <div
