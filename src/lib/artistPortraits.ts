@@ -40,5 +40,9 @@ export const artistPortraits: Record<string, { image: string; source?: string }>
   "蕭敬騰": {
     "image": "/music/artists/apple-7.jpg",
     "source": "https://music.apple.com/cn/artist/%E8%90%A7%E6%95%AC%E8%85%BE/283971013"
+  },
+  "David Bowie": {
+    "image": "/music/artists/david-bowie.jpg",
+    "source": "https://music.apple.com/cn/artist/david-bowie/551695"
   }
 }

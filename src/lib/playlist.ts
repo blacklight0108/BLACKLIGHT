@@ -124,5 +124,14 @@ export const playlist = [
     "cover": "/music/covers/track-14.jpg",
     "src": "/music/track-14.mp3",
     "source": "https://music.apple.com/hk/album/%E9%9B%A8%E6%84%9B/347295255?i=347295290&uo=4"
+  },
+  {
+    "id": "bowie-soul-love",
+    "title": "Soul Love (2012 Remaster)",
+    "artist": "David Bowie",
+    "album": "The Rise and Fall of Ziggy Stardust and the Spiders from Mars (2012 Remaster)",
+    "cover": "/music/covers/bowie-soul-love.jpg",
+    "src": "/music/bowie-soul-love.mp3",
+    "source": "https://music.apple.com/us/album/soul-love-2012-remaster/1039796877?i=1039797275&uo=4"
   }
 ]
