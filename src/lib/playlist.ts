@@ -133,5 +133,14 @@ export const playlist = [
     "cover": "/music/covers/bowie-soul-love.jpg",
     "src": "/music/bowie-soul-love.mp3",
     "source": "https://music.apple.com/us/album/soul-love-2012-remaster/1039796877?i=1039797275&uo=4"
+  },
+  {
+    "id": "bowie-heroes",
+    "title": "\"Heroes\" (2017 Remaster)",
+    "artist": "David Bowie",
+    "album": "\"Heroes\" (2017 Remaster)",
+    "cover": "/music/covers/bowie-heroes.jpg",
+    "src": "/music/bowie-heroes.mp3",
+    "source": "https://music.apple.com/us/album/heroes-2017-remaster/1347894082?i=1347894092&uo=4"
   }
 ]
