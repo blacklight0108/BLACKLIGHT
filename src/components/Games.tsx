@@ -204,11 +204,54 @@ function ReactionGame() {
   )
 }
 
+
+const FEATURED_GAMES = [
+  { title: '股海风云 · 90天', tag: '策略模拟', subtitle: 'MARKET SIMULATOR', description: '在 90 天的市场起伏中做出选择，体验交易与资产管理。', href: '/games/stock-market.html', color: '#14657a', symbol: '↗' },
+  { title: '女神启示录', tag: '角色推理', subtitle: 'CHARACTER MYSTERY', description: '从线索出发，逐步缩小范围，寻找你心中的那个角色。', href: '/games/goddess.html', color: '#82435e', symbol: '✦' },
+  { title: '群星 · 猜历史人物', tag: '历史竞猜', subtitle: 'HISTORY CONSTELLATION', description: '沿着时代与人物的线索，在历史群星中找到答案。', href: '/games/history-stars.html', color: '#986529', symbol: '✧' },
+]
+
+function FeaturedGames() {
+  return (
+    <>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <p className="max-w-xl text-base leading-relaxed text-ink-mute">挑一个世界，开始一段小小的冒险。</p>
+        <span className="text-sm tracking-widest text-ink-faint">即点即玩 · 无需下载</span>
+      </div>
+      <div className="grid gap-5 md:grid-cols-3">
+        {FEATURED_GAMES.map((game) => (
+          <a key={game.href} href={game.href} target="_blank" rel="noopener noreferrer"
+            aria-label={`开始游玩：${game.title}（新标签页打开）`}
+            className="group panel flex min-w-0 flex-col overflow-hidden transition-shadow hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink">
+            <div className="relative flex h-36 items-center justify-center overflow-hidden" style={{ background: game.color }}>
+              <div aria-hidden="true" className="absolute h-48 w-48 rounded-full border border-white/20" />
+              <div aria-hidden="true" className="absolute h-28 w-28 rotate-45 border border-white/30" />
+              <span aria-hidden="true" className="text-6xl text-white/90 transition-transform duration-300 group-hover:scale-110">{game.symbol}</span>
+              <span className="absolute left-4 top-4 text-sm font-medium tracking-widest text-white">{game.tag}</span>
+            </div>
+            <div className="flex flex-1 flex-col p-5">
+              <p className="text-xs tracking-[0.12em] text-ink-faint">{game.subtitle}</p>
+              <h3 className="mt-2 text-xl font-semibold text-ink">{game.title}</h3>
+              <p className="mb-6 mt-3 text-base leading-relaxed text-ink-mute">{game.description}</p>
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-ink/15 pt-4">
+                <span className="font-semibold text-ink">开始游玩</span>
+                <span className="text-sm text-ink-faint">新标签页打开</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </>
+  )
+}
+
 /* ── 板块 ───────────────────────────────────────── */
 export function Games() {
   return (
     <Section id="games" className="section-anchor border-t border-ink/20">
       <SectionHead no="05" title="游戏" en="GAMES" />
+      <FeaturedGames />
+      <h3 className="mb-4 mt-10 text-lg font-semibold text-ink">休息一下 · 轻量挑战</h3>
 
       <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))' }}>
         <SequenceGame />
