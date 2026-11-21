@@ -1,25 +1,36 @@
 name: 自动更新并部署
 
-# 每 6 小时（UTC）：00 / 06 / 12 / 18 = 北京 08:00 / 14:00 / 20:00 / 次日 02:00
-# 也可以在 Actions 页面手动点 Run workflow
+# UTC 00/06/12/18；北京时间每天 02/08/14/20 时
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-production
+  cancel-in-progress: false
 
 env:
   TZ: UTC
+  PYTHONUNBUFFERED: "1"
 
 jobs:
   build-deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
-
-      - name: 看一眼仓库里都有什么
-        run: ls -1A
 
       - name: 准备 pnpm
         uses: pnpm/action-setup@v4
@@ -30,20 +41,98 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: 安装依赖
         run: pnpm install --no-frozen-lockfile
 
-      - name: 抓取 B 站投稿（失败不阻断）
+      - name: 恢复上次成功抓取的数据
+        uses: actions/cache/restore@v4
+        with:
+          path: public/data/updates.json
+          key: bili-feed-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: bili-feed-v1-
+
+      - name: 校验内容与备份数据
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ("public/content.json", "public/data/updates.json"):
+              json.loads(Path(name).read_text(encoding="utf-8"))
+          PY
+          cp public/data/updates.json "$RUNNER_TEMP/updates-before.json"
+
+      - name: 抓取 B 站投稿
+        id: fetch
         continue-on-error: true
+        timeout-minutes: 15
         run: python3 scripts/fetch_bili.py
+
+      - name: 抓取失败时保留原快照
+        if: steps.fetch.outcome == 'failure'
+        run: |
+          cp "$RUNNER_TEMP/updates-before.json" public/data/updates.json
+          echo "::warning::本次抓取失败，保留原数据及原更新时间。"
 
       - name: 构建
         run: pnpm run build
 
+      - name: 校验部署文件
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          root = Path("dist")
+          for name in ("index.html", "_headers", "content.json", "data/updates.json"):
+              assert (root / name).is_file(), f"缺少部署文件: {name}"
+          content = json.loads((root / "content.json").read_text(encoding="utf-8"))
+          data = json.loads((root / "data/updates.json").read_text(encoding="utf-8"))
+          assert isinstance(data.get("feeds"), dict), "投稿数据格式错误"
+          for asset in re.findall(r'(?:src|href)="(/assets/[^"]+)"', (root / "index.html").read_text()):
+              assert (root / asset.lstrip("/")).is_file(), f"缺少资源: {asset}"
+          print(f"校验成功：{len(content.get('ups', []))} 个 UP 主")
+          PY
+
+      - name: 保存成功抓取的数据
+        if: steps.fetch.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: public/data/updates.json
+          key: bili-feed-v1-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: 保存可直接上传的 Cloudflare 部署包
+        uses: actions/upload-artifact@v4
+        with:
+          name: BLACKLIGHT-Cloudflare-Pages-${{ github.run_number }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
+
       - name: 部署到 Cloudflare Pages
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CF_PROJECT_NAME || 'orbitalnoise' }} --branch=main
+
+      - name: 运行结果
+        if: always()
+        env:
+          FETCH_RESULT: ${{ steps.fetch.outcome }}
+          DEPLOY_RESULT: ${{ steps.deploy.outcome }}
+        run: |
+          {
+            echo "## BLACKLIGHT 部署结果"
+            echo "- 提交：$GITHUB_SHA"
+            echo "- 抓取：$FETCH_RESULT（失败时使用原快照）"
+            echo "- 部署：$DEPLOY_RESULT"
+            echo "- 构建成功后，可在本次运行 Artifacts 下载静态部署包。"
+          } >> "$GITHUB_STEP_SUMMARY"
