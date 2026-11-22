@@ -44,5 +44,9 @@ export const artistPortraits: Record<string, { image: string; source?: string }>
   "David Bowie": {
     "image": "/music/artists/david-bowie.jpg",
     "source": "https://music.apple.com/cn/artist/david-bowie/551695"
+  },
+  "王菲": {
+    "image": "/music/artists/faye-wong.jpg",
+    "source": "https://music.apple.com/cn/artist/41760704"
   }
 }

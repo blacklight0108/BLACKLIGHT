@@ -142,5 +142,14 @@ export const playlist = [
     "cover": "/music/covers/bowie-heroes.jpg",
     "src": "/music/bowie-heroes.mp3",
     "source": "https://music.apple.com/us/album/heroes-2017-remaster/1347894082?i=1347894092&uo=4"
+  },
+  {
+    "id": "faye-wong-monsoon",
+    "title": "季候风",
+    "artist": "王菲",
+    "album": "執迷不悔 (Remastered 2019)",
+    "cover": "/music/covers/faye-wong-monsoon.jpg",
+    "src": "/music/faye-wong-monsoon.mp3",
+    "source": "https://music.apple.com/hk/album/%E5%AD%A3%E5%80%99%E9%A2%A8/1488204120?i=1488204277&uo=4"
   }
 ]
